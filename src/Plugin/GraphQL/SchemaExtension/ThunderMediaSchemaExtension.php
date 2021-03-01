@@ -120,7 +120,7 @@ class ThunderMediaSchemaExtension extends ThunderSchemaExtensionPluginBase {
    */
   protected function resolveMediaTypes($value, ResolveContext $context, ResolveInfo $info): string {
     if ($value instanceof MediaInterface) {
-      return $this->mapBundleToSchemaName($value->bundle());
+      return 'Media' . $this->mapBundleToSchemaName($value->bundle());
     }
   }
 
