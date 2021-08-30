@@ -82,7 +82,7 @@ class ThunderGqlsRenderer implements MainContentRendererInterface {
    * @param \Drupal\Core\Language\LanguageManagerInterface $languageManager
    *   The language manager service.
    */
-  public function __construct(ModuleHandlerInterface $moduleHandler, RendererInterface $renderer, BreadcrumbBuilderInterface $breadcrumbManager, CurrentRouteMatch $currentRouteMatch, MetatagManager $metatagManager, LanguageManagerInterface $languageManager) {
+  public function __construct(ModuleHandlerInterface $moduleHandler, RendererInterface $renderer, BreadcrumbBuilderInterface $breadcrumbManager, CurrentRouteMatch $currentRouteMatch, MetatagManagerInterface $metatagManager, LanguageManagerInterface $languageManager) {
     $this->renderer = $renderer;
     $this->metatagManager = $metatagManager;
     $this->breadcrumbManager = $breadcrumbManager;
