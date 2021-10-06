@@ -21,5 +21,12 @@
     "scripts": {
         "cs": "phpcs",
         "cbf": "phpcbf"
-    }
+    },
+    "extra": {
+       "patches": {
+           "drupal/graphql": {
+               "fix: language definition in entity reference producers": "https://patch-diff.githubusercontent.com/raw/drupal-graphql/graphql/pull/1241.diff"
+           }
+       }
+   }
 }
