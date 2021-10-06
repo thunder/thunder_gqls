@@ -7,12 +7,13 @@ use Drupal\Core\Cache\CacheableJsonResponse;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Render\MainContent\MainContentRendererInterface;
 use Drupal\Core\Render\RenderContext;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Routing\CurrentRouteMatch;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\metatag\MetatagManagerInterface;
+use Drupal\metatag\MetatagManager;
 use Drupal\schema_metatag\SchemaMetatagManager;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -54,9 +55,16 @@ class ThunderGqlsRenderer implements MainContentRendererInterface {
   /**
    * The metatag manager service.
    *
-   * @var \Drupal\metatag\MetatagManagerInterface
+   * @var \Drupal\metatag\MetatagManager
    */
   protected $metatagManager;
+
+  /**
+   * The language manager service.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
 
   /**
    * Constructs a new JsonRenderer.
@@ -69,15 +77,18 @@ class ThunderGqlsRenderer implements MainContentRendererInterface {
    *   The breadcrumb manager.
    * @param \Drupal\Core\Routing\CurrentRouteMatch $currentRouteMatch
    *   The route match service.
-   * @param \Drupal\metatag\MetatagManagerInterface $metatagManager
+   * @param \Drupal\metatag\MetatagManager $metatagManager
    *   The metatag manager service.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $languageManager
+   *   The language manager service.
    */
-  public function __construct(ModuleHandlerInterface $moduleHandler, RendererInterface $renderer, BreadcrumbBuilderInterface $breadcrumbManager, CurrentRouteMatch $currentRouteMatch, MetatagManagerInterface $metatagManager) {
+  public function __construct(ModuleHandlerInterface $moduleHandler, RendererInterface $renderer, BreadcrumbBuilderInterface $breadcrumbManager, CurrentRouteMatch $currentRouteMatch, MetatagManager $metatagManager, LanguageManagerInterface $languageManager) {
     $this->renderer = $renderer;
     $this->metatagManager = $metatagManager;
     $this->breadcrumbManager = $breadcrumbManager;
     $this->currentRouteMatch = $currentRouteMatch;
     $this->moduleHandler = $moduleHandler;
+    $this->languageManager = $languageManager;
   }
 
   /**
@@ -88,6 +99,7 @@ class ThunderGqlsRenderer implements MainContentRendererInterface {
 
     $json['breadcrumb'] = $this->breadcrumb();
     $json['jsonld'] = $this->jsonld();
+    $json['language'] = $this->languageManager->getCurrentLanguage()->getId();
 
     $response = new CacheableJsonResponse($json, 200);
     $response->addCacheableDependency(CacheableMetadata::createFromRenderArray($main_content));
