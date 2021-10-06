@@ -4,11 +4,13 @@ namespace Drupal\thunder_gqls\Plugin\GraphQL\DataProducer;
 
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\graphql\Plugin\GraphQL\DataProducer\DataProducerPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 /**
@@ -22,8 +24,8 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
  *     label = @Translation("The data")
  *   ),
  *   consumes = {
- *     "path" = @ContextDefinition("string",
- *       label = @Translation("The path to request")
+ *     "entity" = @ContextDefinition("entity",
+ *       label = @Translation("Root value")
  *     ),
  *     "key" = @ContextDefinition("string",
  *       label = @Translation("The data key")
@@ -41,6 +43,13 @@ class ThunderEntitySubRequest extends DataProducerPluginBase implements Containe
   protected $httpKernel;
 
   /**
+   * The request stack service.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  protected $requestStack;
+
+  /**
    * {@inheritdoc}
    *
    * @codeCoverageIgnore
@@ -50,7 +59,8 @@ class ThunderEntitySubRequest extends DataProducerPluginBase implements Containe
       $configuration,
       $pluginId,
       $pluginDefinition,
-      $container->get('http_kernel')
+      $container->get('http_kernel'),
+      $container->get('request_stack')
     );
   }
 
@@ -65,22 +75,26 @@ class ThunderEntitySubRequest extends DataProducerPluginBase implements Containe
    *   The plugin definition.
    * @param \Symfony\Component\HttpKernel\HttpKernelInterface $httpKernel
    *   The HTTP kernel service.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
+   *   The request stack service.
    */
   public function __construct(
     array $configuration,
     string $pluginId,
     $pluginDefinition,
-    HttpKernelInterface $httpKernel
+    HttpKernelInterface $httpKernel,
+    RequestStack $requestStack
   ) {
     parent::__construct($configuration, $pluginId, $pluginDefinition);
     $this->httpKernel = $httpKernel;
+    $this->requestStack = $requestStack;
   }
 
   /**
    * Resolve data from a sub request.
    *
-   * @param string $path
-   *   The path to request.
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity.
    * @param string $key
    *   The key, where the data is stored in the sub request.
    * @param \Drupal\Core\Cache\RefinableCacheableDependencyInterface $metadata
@@ -91,18 +105,23 @@ class ThunderEntitySubRequest extends DataProducerPluginBase implements Containe
    *
    * @throws \Drupal\Core\Entity\EntityMalformedException
    */
-  public function resolve(string $path, string $key, RefinableCacheableDependencyInterface $metadata) {
+  public function resolve(EntityInterface $entity, string $key, RefinableCacheableDependencyInterface $metadata) {
+    $currentRequest = $this->requestStack->getCurrentRequest();
     $request = Request::create(
-      $path,
+      $entity->toUrl()->getInternalPath(),
       'GET',
-      [MainContentViewSubscriber::WRAPPER_FORMAT => 'thunder_gqls']
+      [MainContentViewSubscriber::WRAPPER_FORMAT => 'thunder_gqls'],
+      $currentRequest->cookies->all(),
+      $currentRequest->files->all(),
+      $currentRequest->server->all()
     );
 
-    /** @var \Symfony\Component\HttpFoundation\JsonResponse $response */
-    $response = $this->httpKernel->handle($request);
-    if ($response->getStatusCode() !== 200) {
-      return '';
+    if ($session = $currentRequest->getSession()) {
+      $request->setSession($session);
     }
+
+    /** @var \Symfony\Component\HttpFoundation\JsonResponse $response */
+    $response = $this->httpKernel->handle($request, HttpKernelInterface::SUB_REQUEST);
 
     $content = (string) $response->getContent();
 

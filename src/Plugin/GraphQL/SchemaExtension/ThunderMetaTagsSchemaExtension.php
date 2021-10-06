@@ -23,7 +23,10 @@ class ThunderMetaTagsSchemaExtension extends ThunderSchemaExtensionPluginBase {
     parent::registerResolvers($registry);
 
     $this->addFieldResolverIfNotExists('Query', 'metatags', $this->builder->compose(
-      $this->fromRoute($this->builder->fromArgument('path')),
+      $this->builder->produce('route_load')
+        ->map('path', $this->builder->fromArgument('path')),
+      $this->builder->produce('route_entity')
+        ->map('url', $this->builder->fromParent()),
       $this->builder->produce('thunder_metatags')
         ->map('type', $this->builder->fromValue('entity'))
         ->map('value', $this->builder->fromParent())

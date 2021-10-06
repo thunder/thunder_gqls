@@ -46,7 +46,10 @@ class ThunderPagesSchemaExtension extends ThunderSchemaExtensionPluginBase {
 
     // Page.
     $this->addFieldResolverIfNotExists('Query', 'page',
-      $this->fromRoute($this->builder->fromArgument('path'))
+      $this->builder->compose(
+        $this->builder->produce('route_load')->map('path', $this->builder->fromArgument('path')),
+        $this->builder->produce('route_entity')->map('url', $this->builder->fromParent()),
+      )
     );
 
     // Teaser.
@@ -191,8 +194,6 @@ class ThunderPagesSchemaExtension extends ThunderSchemaExtensionPluginBase {
    *
    * @return string
    *   Response type.
-   *
-   * @throws \Exception
    */
   protected function resolvePageTypes($value, ResolveContext $context, ResolveInfo $info): string {
     if ($value instanceof NodeInterface || $value instanceof TermInterface || $value instanceof UserInterface) {
@@ -201,7 +202,6 @@ class ThunderPagesSchemaExtension extends ThunderSchemaExtensionPluginBase {
       }
       return $this->mapBundleToSchemaName($value->bundle());
     }
-    throw new \Exception('Invalid page type.');
   }
 
 }
