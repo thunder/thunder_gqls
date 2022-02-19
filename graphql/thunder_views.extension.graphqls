@@ -1,0 +1,3 @@
+extend type Query {
+  views(view_id: String!, display_id: String, offset: Int, page_size: Int, page: Int): [Page]
+}
